@@ -1,14 +1,55 @@
-import {Text, View} from "react-native";
-import {Link} from "expo-router";
+// app/DecodeQr/DecodeQr.tsx
 
-const DecodeQr = ():any => {
-    return(
+import {Camera, CameraView} from 'expo-camera';
+import { useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Text, View, StyleSheet, Alert } from 'react-native';
+import {decryptQr} from './decode';
+
+export default function DecodeQr() {
+    const router = useRouter();
+    const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+    const [value,setValue] = useState("");
+    useEffect(() => {
+        (async () => {
+
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            setHasPermission(status === 'granted');
+        })();
+    }, []);
+
+    useEffect(() => {
+        if(!(value == null || value == "")) {
+            console.log("hello")
+            router.push({pathname: "/DecodeQr/ViewData", params: {value}});
+        }
+    }, [value]);
+
+    if (hasPermission === null) return <View />;
+    if (!hasPermission) return <Text>No camera access</Text>;
+
+    return (
         <>
-            <View className="flex-1 justify-center items-center">
-                <Text>Hii from decodeqr</Text>
-            </View>
-        </>
-    )
+
+        <View>
+            <Text>{value}</Text>
+        </View>
+        <View style={styles.container}>
+
+            <CameraView
+                style={StyleSheet.absoluteFillObject}
+                facing="back"
+                onBarcodeScanned={({ data }) =>{
+                    setValue(decryptQr(data));
+                }}
+            />
+
+        </View>
+            </>
+    );
 }
 
-export default  DecodeQr;
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    camera: { flex: 1 },
+});
